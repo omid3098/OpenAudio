@@ -3,5 +3,6 @@
 	"description": "singleton audio manager for unity",
 	"dependencies":[],
 	"downloadable": "true",
+	"branch": "master",
 	"category":"tools/audio"
 }
