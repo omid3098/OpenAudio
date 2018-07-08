@@ -1,0 +1,7 @@
+{
+	"name": "Open Audio",
+	"description": "singleton audio manager for unity",
+	"dependencies":[],
+	"downloadable": "true",
+	"category":"tools/audio"
+}
