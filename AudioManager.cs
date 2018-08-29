@@ -32,7 +32,12 @@ namespace OpenAudio
 
         // List<AudioDatabaseItem> audioItemList;
         List<Audio> audioSourcePool;
-        [SerializeField] List<AudioDatabase> allDataBases;
+        [SerializeField] List<RawAudioDatabase> allDataBases;
+
+        /// <summary>
+        /// List of all manual audio clips directly passed to audioService
+        /// </summary>
+        private List<AudioDatabaseItem> audioClipDatabaseList;
 
         // List<AudioClip> audioClips;
 
@@ -53,20 +58,55 @@ namespace OpenAudio
                 gameObject.AddComponent<AudioListener>();
             }
 
-            allDataBases = new List<AudioDatabase>();
+            allDataBases = new List<RawAudioDatabase>();
             audioSourcePool = new List<Audio>();
+            audioClipDatabaseList = new List<AudioDatabaseItem>();
             // audioClips = new List<AudioClip>();
 
             AudioDatabase[] rawcollections = Resources.LoadAll<AudioDatabase>("");
             foreach (var rawDatabase in rawcollections)
             {
-                var _db = new AudioDatabase(rawDatabase);
+                var _db = new RawAudioDatabase(rawDatabase);
                 allDataBases.Add(_db);
             }
             // foreach (var audioDB in allDataBases)
             // {
             //     audioItemList.AddRange(audioDB.audioDBItems);
             // }
+        }
+
+        //  Playe audio clip directly returns an ID for this audioClip so you can have access to that
+        public void Play(AudioClip clip, bool loop = false)
+        {
+            var audioDatabaseItem = audioClipDatabaseList.Find(x => x.audioName == clip.name);
+            if (audioDatabaseItem == null)
+            {
+                // Play audioclip and add to dictionary
+                audioDatabaseItem = new AudioDatabaseItem();
+                audioDatabaseItem.audioName = clip.name;
+                audioDatabaseItem.audioClip = clip;
+                audioClipDatabaseList.Add(audioDatabaseItem);
+            }
+            Audio freeAudio = GetFreeAudio();
+            if (freeAudio == null)
+            {
+                freeAudio = new Audio(audioDatabaseItem);
+                audioSourcePool.Add(freeAudio);
+            }
+            freeAudio.Init(audioDatabaseItem).Play().Loop(loop);
+        }
+
+        private Audio GetFreeAudio()
+        {
+            Audio audio = null;
+            foreach (Audio item in audioSourcePool)
+            {
+                if (!item.isplaying())
+                {
+                    audio = item;
+                }
+            }
+            return audio;
         }
 
         public void Play(AudioType audioType, bool loop = false)
@@ -87,7 +127,7 @@ namespace OpenAudio
 
             // Find clip database item and set clip if it is not set;
             AudioDatabaseItem audioDatabaseItem = null;
-            AudioDatabase db = null;
+            RawAudioDatabase db = null;
             foreach (var database in allDataBases)
             {
                 var tmp = database.audioDBItems.Find(x => x.type == audioType);
@@ -109,7 +149,6 @@ namespace OpenAudio
 
             if (audio == null)
             {
-
                 audio = new Audio(audioDatabaseItem);
                 audioSourcePool.Add(audio);
             }
