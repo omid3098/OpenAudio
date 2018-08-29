@@ -47,6 +47,7 @@ namespace OpenAudio
             DrawPathField();
             list.DoLayoutList();
             serializedObject.ApplyModifiedProperties();
+            EditorUtility.SetDirty(target);
         }
 
         private void DrawPathField()

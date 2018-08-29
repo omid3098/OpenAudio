@@ -9,5 +9,11 @@ namespace OpenAudio.Database
         public string ResourcePath;
 
         public List<AudioDatabaseItem> audioDBItems = new List<AudioDatabaseItem>();
+
+        public AudioDatabase(AudioDatabase rawDatabase)
+        {
+            ResourcePath = rawDatabase.ResourcePath;
+            audioDBItems = rawDatabase.audioDBItems;
+        }
     }
 }

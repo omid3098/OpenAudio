@@ -57,7 +57,12 @@ namespace OpenAudio
             audioSourcePool = new List<Audio>();
             // audioClips = new List<AudioClip>();
 
-            allDataBases.AddRange(Resources.LoadAll<AudioDatabase>(""));
+            AudioDatabase[] rawcollections = Resources.LoadAll<AudioDatabase>("");
+            foreach (var rawDatabase in rawcollections)
+            {
+                var _db = new AudioDatabase(rawDatabase);
+                allDataBases.Add(_db);
+            }
             // foreach (var audioDB in allDataBases)
             // {
             //     audioItemList.AddRange(audioDB.audioDBItems);

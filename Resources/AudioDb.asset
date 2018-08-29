@@ -3,7 +3,7 @@
 --- !u!114 &11400000
 MonoBehaviour:
   m_ObjectHideFlags: 0
-  m_PrefabParentObject: {fileID: 0}
+  m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInternal: {fileID: 0}
   m_GameObject: {fileID: 0}
   m_Enabled: 1
@@ -15,7 +15,7 @@ MonoBehaviour:
   audioDBItems:
   - audioName: sample-audio-01
     type: 0
-    audioClip: {fileID: 8300000, guid: 57f9bbd6a1bb1c14280270f4c9ef2d40, type: 3}
+    audioClip: {fileID: 0}
   - audioName: sample-audio-02
     type: 1
-    audioClip: {fileID: 8300000, guid: d7cd8fbf77d24e14db9dea224998ee83, type: 3}
+    audioClip: {fileID: 0}
