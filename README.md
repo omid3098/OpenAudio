@@ -1,39 +1,40 @@
 # OpenAudio
 We provide an asset to map all audio names to audioTypes.
 so when you want to play an audio file, you only need to use audioType and forget about file names and strings.
-you only need to define an audio type for each new audio file you add to your project and update audio databse file.
+you only need to define an audio type for each new audio file you add to your project.
 
 ## Usage 
-- Add your audio type in **AudioType.cs**. (ie. buttonPress or menuAmbient)
-- Create a new AudioDatabase in resources folder and set Resources Path for this AudioDatabase. this string represent the resource path to search for audio files. 
-- Add an new database item, Drag Audio file into name field and select audio type for it.
+- Create new enum for your audio types.
+- put all your audio files in resource folder. (Resources root or inside any sub folder)
+- for each one of your audio files, you need to add an item to your enum with THE EXACT SAME NAME! and use the API to play them.
 
+you also can check out the sample folder in project.
 
 ## Commands
 ``` 
     // Play audio type
-    AudioManager.instance.Play(AudioType audioType, bool loop);
+    AudioManager.Play(TEnum audioType, bool loop);
 
     // Stop audio type
-    AudioManager.instance.Stop(AudioType audioType);
+    AudioManager.Stop(TEnum audioType);
 
     // Pause all audios
-    AudioManager.instance.StopAll();
+    AudioManager.StopAll();
 
     // Pause audio type
-    AudioManager.instance.Pause(AudioType audioType);
+    AudioManager.Pause(TEnum audioType);
 
     // Set audio volume
-    AudioManager.instance.SetVolume(AudioType audioType, float volume);
+    AudioManager.SetVolume(TEnum audioType, float volume);
 
     // Set all audio volumes
-    AudioManager.instance.SetVolume(float volume);
+    AudioManager.SetVolume(float volume);
 
     // Mute audio manager
-    AudioManager.instance.Mute();
+    AudioManager.Mute();
 
     // UnMute audio manager
-    AudioManager.instance.UnMute();
+    AudioManager.UnMute();
 
 
 ```
