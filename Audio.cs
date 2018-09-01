@@ -1,5 +1,4 @@
 using System;
-using OpenAudio.Database;
 using UnityEngine;
 
 namespace OpenAudio
@@ -8,38 +7,30 @@ namespace OpenAudio
     //  : IAudio
     {
         AudioSource audioSource;
-
         GameObject _gameObject;
-        AudioDatabaseItem _audioDatabaseItem;
-        public AudioDatabaseItem audioDatabaseItem
+        public AudioClip audioClip
         {
-            get
-            {
-                return _audioDatabaseItem;
-            }
+            get { return audioSource.clip; }
             private set
             {
-                _audioDatabaseItem = value;
-                audioSource.clip = value.audioClip;
+                audioSource.clip = value;
             }
         }
 
-        public Audio(AudioDatabaseItem _audioDatabaseItem)
+        public bool isPaused { get; private set; }
+        public bool isplaying { get { return audioSource.isPlaying; } }
+
+        public Audio(Transform parent)
         {
+            isPaused = false;
             if (_gameObject == null)
             {
                 _gameObject = new GameObject("audioSource");
-                _gameObject.transform.SetParent(OpenAudio.AudioManager.instance.transform, false);
+                _gameObject.transform.SetParent(parent, false);
                 audioSource = _gameObject.AddComponent<AudioSource>();
-                audioDatabaseItem = _audioDatabaseItem;
             }
         }
-
-        public Audio Init(AudioDatabaseItem item)
-        {
-            audioDatabaseItem = item;
-            return this;
-        }
+        public Audio SetClip(AudioClip clip) { this.audioClip = clip; return this; }
 
         /// <summary>
         /// Set Audio volume
@@ -54,7 +45,15 @@ namespace OpenAudio
 
         public Audio Play()
         {
+            isPaused = false;
             audioSource.Play();
+            return this;
+        }
+
+        public Audio Resume()
+        {
+            isPaused = false;
+            audioSource.UnPause();
             return this;
         }
 
@@ -70,10 +69,6 @@ namespace OpenAudio
             return this;
         }
 
-        public bool isplaying()
-        {
-            return audioSource.isPlaying;
-        }
 
         public Audio SetParent(Transform parent)
         {
@@ -83,6 +78,7 @@ namespace OpenAudio
 
         public void Pause()
         {
+            isPaused = true;
             audioSource.Pause();
         }
 

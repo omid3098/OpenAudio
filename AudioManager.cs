@@ -1,176 +1,97 @@
+using System;
 using System.Collections.Generic;
-using OpenAudio.Database;
 using UnityEngine;
+using UnityEngine.Assertions;
 
 namespace OpenAudio
 {
 
-    public class AudioManager : MonoBehaviour
+    public class AudioManager<TEnum> where TEnum : struct
     {
-        #region Properties
-        private static AudioManager _instance;
-        public static AudioManager instance
+        private List<Audio> audioSourcePool;
+        /// List of all manual audio clips
+        private List<AudioClip> audioClipPool;
+        private AudioListener audioListener;
+        private static GameObject audioManagerGameObject;
+        private string resourcePath;
+
+        public AudioManager(string resourcePath)
         {
-            get
-            {
-                if (_instance == null)
-                {
-                    _instance = GameObject.FindObjectOfType<AudioManager>();
-                    if (_instance == null)
-                    {
-                        var t = new GameObject("audio-manager");
-                        _instance = t.AddComponent<AudioManager>();
-                    }
-                }
-                return _instance;
-            }
-        }
+            this.resourcePath = resourcePath;
+            audioListener = GameObject.FindObjectOfType<AudioListener>();
+            audioManagerGameObject = new GameObject("audio-manager");
+            if (audioListener == null) audioListener = audioManagerGameObject.AddComponent<AudioListener>();
+            GameObject.DontDestroyOnLoad(audioManagerGameObject);
 
-        #endregion
-
-        #region Fields
-
-        // List<AudioDatabaseItem> audioItemList;
-        List<Audio> audioSourcePool;
-        [SerializeField] List<RawAudioDatabase> allDataBases;
-
-        /// <summary>
-        /// List of all manual audio clips directly passed to audioService
-        /// </summary>
-        private List<AudioDatabaseItem> audioClipDatabaseList;
-
-        // List<AudioClip> audioClips;
-
-        #endregion
-
-        #region Methods
-
-        void Awake()
-        {
-            GameObject.DontDestroyOnLoad(this);
-            LoadService();
-        }
-
-        private void LoadService()
-        {
-            if (GameObject.FindObjectOfType<AudioListener>() == null)
-            {
-                gameObject.AddComponent<AudioListener>();
-            }
-
-            allDataBases = new List<RawAudioDatabase>();
             audioSourcePool = new List<Audio>();
-            audioClipDatabaseList = new List<AudioDatabaseItem>();
-            // audioClips = new List<AudioClip>();
-
-            AudioDatabase[] rawcollections = Resources.LoadAll<AudioDatabase>("");
-            foreach (var rawDatabase in rawcollections)
-            {
-                var _db = new RawAudioDatabase(rawDatabase);
-                allDataBases.Add(_db);
-            }
-            // foreach (var audioDB in allDataBases)
-            // {
-            //     audioItemList.AddRange(audioDB.audioDBItems);
-            // }
-        }
-
-        //  Playe audio clip directly returns an ID for this audioClip so you can have access to that
-        public void Play(AudioClip clip, bool loop = false)
-        {
-            var audioDatabaseItem = audioClipDatabaseList.Find(x => x.audioName == clip.name);
-            if (audioDatabaseItem == null)
-            {
-                // Play audioclip and add to dictionary
-                audioDatabaseItem = new AudioDatabaseItem();
-                audioDatabaseItem.audioName = clip.name;
-                audioDatabaseItem.audioClip = clip;
-                audioClipDatabaseList.Add(audioDatabaseItem);
-            }
-            Audio freeAudio = GetFreeAudio();
-            if (freeAudio == null)
-            {
-                freeAudio = new Audio(audioDatabaseItem);
-                audioSourcePool.Add(freeAudio);
-            }
-            freeAudio.Init(audioDatabaseItem).Play().Loop(loop);
+            audioClipPool = new List<AudioClip>();
         }
 
         private Audio GetFreeAudio()
         {
             Audio audio = null;
-            foreach (Audio item in audioSourcePool)
+            foreach (Audio _audio in audioSourcePool)
             {
-                if (!item.isplaying())
-                {
-                    audio = item;
-                }
+                if (!_audio.isplaying && !_audio.isPaused) audio = _audio;
             }
+            if (audio != null) return audio;
+            audio = new Audio(audioManagerGameObject.transform);
+            audioSourcePool.Add(audio);
             return audio;
         }
 
-        public void Play(AudioType audioType, bool loop = false)
+        private Audio GetAudioByName(string type)
         {
-            Audio audio = null;
-            foreach (Audio item in audioSourcePool)
+            foreach (Audio _audio in audioSourcePool)
             {
-                if (!item.isplaying())
-                {
-                    if (item.audioDatabaseItem.type == audioType)
-                    {
-                        item.Play().Loop(loop);
-                        return;
-                    }
-                    audio = item;
-                }
+                if (_audio.audioClip.name == type) return _audio;
             }
-
-            // Find clip database item and set clip if it is not set;
-            AudioDatabaseItem audioDatabaseItem = null;
-            RawAudioDatabase db = null;
-            foreach (var database in allDataBases)
-            {
-                var tmp = database.audioDBItems.Find(x => x.type == audioType);
-                if (tmp != null)
-                {
-                    audioDatabaseItem = tmp;
-                    db = database;
-                    break;
-                }
-            }
-
-            if (audioDatabaseItem != null && audioDatabaseItem.audioClip == null)
-            {
-                string clipPath = db.ResourcePath + "/" + audioDatabaseItem.audioName;
-                var clip = Resources.Load<AudioClip>(clipPath);
-                if (clip != null) audioDatabaseItem.audioClip = clip;
-                else Debug.Log("could not find audioClip at: " + clipPath);
-            }
-
-            if (audio == null)
-            {
-                audio = new Audio(audioDatabaseItem);
-                audioSourcePool.Add(audio);
-            }
-            audio.Init(audioDatabaseItem);
-            audio.Play().Loop(loop);
+            return null;
         }
 
-        // private AudioDatabaseItem GetAudioDatabaseItem(AudioType audioType)
-        // {
-        //     AudioDatabaseItem t = null;
-        //     foreach (var db in allDataBases)
-        //     {
-        //         t = db.audioDBItems.Find(x => x.type == audioType);
-        //     }
-        //     return t;
-        // }
+        private AudioClip LoadAudioClip(string clipName)
+        {
+            var audioClip = audioClipPool.Find(x => x.name == clipName);
+            if (audioClip != null) return audioClip;
+            // load the audioclip
+            string path = resourcePath + "/" + clipName;
+            AudioClip audioClip1 = Resources.Load<AudioClip>(path);
+            Assert.IsNotNull(audioClip1, "could not find audio clip at " + path);
+            return audioClip1;
+        }
+
+        //  Playe audio clip directly returns an ID for this audioClip so you can have access to that
+        public void Play(AudioClip clip, bool loop = false)
+        {
+            // if we have an audio with this clip, just play it
+            Audio _audio = GetAudioByName(clip.name);
+            if (_audio != null)
+            {
+                _audio.Play().Loop(loop);
+                return;
+            }
+            // if we dont have an audio with this clip, create a new free audio and set this clip and play it
+            GetFreeAudio().SetClip(clip).Play().Loop(loop);
+            if (audioClipPool.Contains(clip)) audioClipPool.Add(clip);
+        }
+
+        public void Play(TEnum audioType, bool loop = false)
+        {
+            Audio _audio = GetAudioByName(audioType.ToString());
+            if (_audio != null)
+            {
+                _audio.Play().Loop(loop);
+                return;
+            }
+            var audioClip = LoadAudioClip(audioType.ToString());
+            Play(audioClip, loop);
+        }
 
         public void StopAll()
         {
             foreach (var audio in audioSourcePool)
             {
-                if (audio.isplaying()) audio.Stop();
+                if (audio.isplaying) audio.Stop();
             }
         }
 
@@ -178,7 +99,7 @@ namespace OpenAudio
         {
             foreach (var audio in audioSourcePool)
             {
-                if (audio.audioDatabaseItem.type == audioType)
+                if (audio.audioClip.name == audioType.ToString())
                 {
                     audio.Stop();
                     break;
@@ -189,7 +110,7 @@ namespace OpenAudio
         {
             foreach (var audio in audioSourcePool)
             {
-                if (audio.audioDatabaseItem.type == audioType)
+                if (audio.audioClip.name == audioType.ToString())
                 {
                     audio.Pause();
                     break;
@@ -199,11 +120,11 @@ namespace OpenAudio
 
         public void SetVolume(AudioType audioType, float vol)
         {
-            foreach (var _audio in audioSourcePool)
+            foreach (var audio in audioSourcePool)
             {
-                if (_audio.audioDatabaseItem.type == audioType)
+                if (audio.audioClip.name == audioType.ToString())
                 {
-                    _audio.SetVolume(vol);
+                    audio.SetVolume(vol);
                 }
             }
         }
@@ -211,7 +132,7 @@ namespace OpenAudio
         {
             foreach (var _audio in audioSourcePool)
             {
-                if (_audio.isplaying())
+                if (_audio.isplaying)
                 {
                     _audio.SetVolume(vol);
                 }
@@ -233,6 +154,5 @@ namespace OpenAudio
                 _audio.UnMute();
             }
         }
-        #endregion
     }
 }
